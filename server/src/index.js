@@ -14,6 +14,7 @@ import workspaceRoutes from './routes/workspace.routes.js'
 import projectRoutes from './routes/project.routes.js'
 import taskRoutes from './routes/task.routes.js'
 import projectActionRoutes from './routes/projectAction.routes.js'  // ✅ add this
+import inviteRoutes from './routes/invite.routes.js'
 
 
 // Socket handler
@@ -59,6 +60,8 @@ app.use('/api/workspaces', workspaceRoutes)
 app.use('/api/workspaces', projectRoutes)
 app.use('/api/projects', projectActionRoutes)   // ✅ DELETE /api/projects/:id
 app.use('/api/projects', taskRoutes)            // ✅ /api/projects/:id/tasks
+app.use('/api/invites', inviteRoutes)
+
 
 // ─── 404 Handler ──────────────────────────────────────────────
 app.use((req, res) => {

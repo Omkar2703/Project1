@@ -10,6 +10,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Board from './pages/Board'
+import AcceptInvite from './pages/AcceptInvite'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -21,13 +22,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Auth Routes */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Route>
 
-        {/* Protected App Routes */}
+        {/* ✅ Public — no auth needed */}
+        <Route path="/invite/accept" element={<AcceptInvite />} />
+
         <Route element={
           <ProtectedRoute>
             <AppLayout />
@@ -37,7 +39,6 @@ export default function App() {
           <Route path="/board/:projectId" element={<Board />} />
         </Route>
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
