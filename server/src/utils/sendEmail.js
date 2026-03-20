@@ -1,14 +1,24 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
 export const sendInviteEmail = async ({ toEmail, inviterName, workspaceName, inviteToken, role }) => {
 
-  // ✅ Initialize inside function so dotenv is already loaded
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    throw new Error('GMAIL_USER or GMAIL_APP_PASSWORD is not set in .env')
+  }
+
+  // ✅ Create transporter inside function so env vars are loaded
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD
+    }
+  })
 
   const inviteLink = `${process.env.CLIENT_URL}/invite/accept?token=${inviteToken}`
 
-  const { data, error } = await resend.emails.send({
-    from: 'CollabFlow <onboarding@resend.dev>',
+  const mailOptions = {
+    from: `"CollabFlow" <${process.env.GMAIL_USER}>`,
     to: toEmail,
     subject: `${inviterName} invited you to "${workspaceName}" on CollabFlow`,
     html: `
@@ -45,7 +55,7 @@ export const sendInviteEmail = async ({ toEmail, inviterName, workspaceName, inv
               <span>📁 ${workspaceName}</span>
             </div>
             <span class="role-badge">Your role: ${role}</span>
-            <p>Click the button below to accept the invitation and start collaborating:</p>
+            <p>Click the button below to accept the invitation and join the workspace:</p>
             <a href="${inviteLink}" class="btn">Accept Invitation →</a>
             <div class="expire">
               ⏳ This invitation link expires in <strong>24 hours</strong>.
@@ -59,13 +69,9 @@ export const sendInviteEmail = async ({ toEmail, inviterName, workspaceName, inv
       </body>
       </html>
     `
-  })
-
-  if (error) {
-    console.error('❌ Resend error:', error)
-    throw new Error(error.message)
   }
 
-  console.log('✅ Invite email sent:', data?.id)
-  return data
+  const info = await transporter.sendMail(mailOptions)
+  console.log('✅ Invite email sent to:', toEmail, '| Message ID:', info.messageId)
+  return info
 }
