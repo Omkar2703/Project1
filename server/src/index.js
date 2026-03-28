@@ -8,6 +8,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import 'express-async-errors'
 
+
 // Routes
 import authRoutes from './routes/auth.routes.js'
 import workspaceRoutes from './routes/workspace.routes.js'
@@ -15,6 +16,7 @@ import projectRoutes from './routes/project.routes.js'
 import taskRoutes from './routes/task.routes.js'
 import projectActionRoutes from './routes/projectAction.routes.js'  // ✅ add this
 import inviteRoutes from './routes/invite.routes.js'
+import aiRoutes from './routes/ai.routes.js'
 
 
 // Socket handler
@@ -61,6 +63,7 @@ app.use('/api/workspaces', projectRoutes)
 app.use('/api/projects', projectActionRoutes)   // ✅ DELETE /api/projects/:id
 app.use('/api/projects', taskRoutes)            // ✅ /api/projects/:id/tasks
 app.use('/api/invites', inviteRoutes)
+app.use('/api/ai', aiRoutes)
 
 
 // ─── 404 Handler ──────────────────────────────────────────────

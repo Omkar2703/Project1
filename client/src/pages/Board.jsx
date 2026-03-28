@@ -16,6 +16,8 @@ import { useProjectSocket } from '../hooks/useSocket'
 import KanbanColumn from '../components/board/KanbanColumn'
 import TaskCard from '../components/board/TaskCard'
 import TaskModal from '../components/board/TaskModal'
+import { Sparkles } from 'lucide-react'
+import AIBreakdownModal from '../components/board/AIBreakdownModal'
 
 const COLUMNS = [
   { id: 'todo',        label: 'To Do',       color: '#94a3b8' },
@@ -32,6 +34,7 @@ export default function Board() {
   const [activeTask, setActiveTask] = useState(null)      // task being dragged
   const [selectedTask, setSelectedTask] = useState(null)  // task modal open
   const [showNewTask, setShowNewTask] = useState(null)    // which column shows input
+  const [showAI, setShowAI] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -172,7 +175,16 @@ export default function Board() {
         >
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-lg font-semibold text-slate-800">Kanban Board</h1>
+        <h1 className="text-lg font-semibold text-slate-800 flex-1">Kanban Board</h1>
+
+        {/* ✅ AI Button */}
+        <button
+          onClick={() => setShowAI(true)}
+          className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+        >
+          <Sparkles size={16} />
+          AI Breakdown
+        </button>
       </div>
 
       {/* Board */}
@@ -213,6 +225,18 @@ export default function Board() {
           task={selectedTask}
           projectId={projectId}
           onClose={() => setSelectedTask(null)}
+        />
+      )}
+      {showAI && (
+        <AIBreakdownModal
+          projectId={projectId}
+          onClose={() => setShowAI(false)}
+          onTasksCreated={(tasks) => {
+            // Emit socket event so other users see new tasks too
+            tasks.forEach(task => {
+              socket?.emit('task-created', { projectId, task })
+            })
+          }}
         />
       )}
     </div>
