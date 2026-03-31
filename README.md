@@ -14,6 +14,9 @@ A real-time project and task management SaaS app — think lightweight Notion + 
 - JWT-based auth with access + refresh tokens
 - AI Task Breakdown — type a goal, AI breaks it into tasks on the board (Mistral AI)
 - Automated email reminders for due and overdue tasks (node-cron)
+- Dark mode toggle with persistent theme across sessions
+- Input validation on all API routes (express-validator)
+- Rate limiting on auth, invite, and AI routes (express-rate-limit)
 
 ---
 
@@ -21,7 +24,7 @@ A real-time project and task management SaaS app — think lightweight Notion + 
 
 | Layer | Tech |
 |---|---|
-| Frontend | React 19, Vite, Tailwind CSS, Zustand, TanStack Query v5 |
+| Frontend | React 19, Vite, Tailwind CSS (dark mode), Zustand, TanStack Query v5 |
 | Backend | Node.js, Express |
 | Database | MongoDB Atlas |
 | Real-time | Socket.io |
@@ -29,6 +32,8 @@ A real-time project and task management SaaS app — think lightweight Notion + 
 | Email | Nodemailer + Gmail SMTP |
 | AI | Mistral AI (mistral-small-latest) |
 | Scheduling | node-cron (daily task reminders) |
+| Validation | express-validator |
+| Rate Limiting | express-rate-limit |
 | Container | Docker (optional, not fully tested yet) |
 
 ---
@@ -39,80 +44,89 @@ A real-time project and task management SaaS app — think lightweight Notion + 
 Project1/
 ├── docker-compose.yml
 ├── README.md
-├── client/                               # React frontend
+├── client/                                   # React frontend
 │   ├── src/
 │   │   ├── api/
-│   │   │   ├── axios.js                  # Axios instance + interceptors + auto token refresh
+│   │   │   ├── axios.js                      # Axios instance + interceptors + auto token refresh
 │   │   │   ├── auth.api.js
 │   │   │   ├── workspace.api.js
 │   │   │   ├── project.api.js
 │   │   │   ├── task.api.js
 │   │   │   ├── invite.api.js
-│   │   │   └── ai.api.js                 # AI breakdown API call
+│   │   │   └── ai.api.js                     # AI breakdown API call
 │   │   ├── store/
-│   │   │   ├── authStore.js              # Zustand auth state (persisted)
-│   │   │   └── workspaceStore.js         # Active workspace state
+│   │   │   ├── authStore.js                  # Zustand auth state (persisted)
+│   │   │   ├── workspaceStore.js             # Active workspace state
+│   │   │   └── themeStore.js                 # Dark/light mode toggle (persisted)
 │   │   ├── hooks/
-│   │   │   └── useSocket.js              # Socket.io hook + project room joining
+│   │   │   └── useSocket.js                  # Socket.io hook + project room joining
 │   │   ├── layouts/
-│   │   │   ├── AppLayout.jsx             # Sidebar + main content
-│   │   │   └── AuthLayout.jsx            # Centered auth card layout
+│   │   │   ├── AppLayout.jsx                 # Sidebar + main content
+│   │   │   └── AuthLayout.jsx                # Centered auth card layout
 │   │   ├── pages/
-│   │   │   ├── Login.jsx                 # Handles invite token redirect after login
+│   │   │   ├── Login.jsx                     # Handles invite token redirect after login
 │   │   │   ├── Register.jsx
-│   │   │   ├── Dashboard.jsx             # Workspaces + Projects + delete + invite
-│   │   │   ├── Board.jsx                 # Kanban board + drag & drop + AI button
-│   │   │   └── AcceptInvite.jsx          # Email invite accept page
+│   │   │   ├── Dashboard.jsx                 # Workspaces + Projects + delete + invite
+│   │   │   ├── Board.jsx                     # Kanban board + drag & drop + AI button
+│   │   │   └── AcceptInvite.jsx              # Email invite accept page
 │   │   ├── components/
-│   │   │   ├── Sidebar.jsx               # Nav + user info + copy user ID
-│   │   │   ├── InviteMemberModal.jsx     # Email tab + User ID tab
+│   │   │   ├── Sidebar.jsx                   # Nav + user info + dark mode toggle + copy user ID
+│   │   │   ├── InviteMemberModal.jsx         # Email tab + User ID tab
 │   │   │   └── board/
-│   │   │       ├── KanbanColumn.jsx      # Droppable column + add task input
-│   │   │       ├── TaskCard.jsx          # Draggable card + priority + subtask progress
-│   │   │       ├── TaskModal.jsx         # Edit task + subtasks + due date
-│   │   │       └── AIBreakdownModal.jsx  # AI goal input + example prompts
+│   │   │       ├── KanbanColumn.jsx          # Droppable column + add task input
+│   │   │       ├── TaskCard.jsx              # Draggable card + priority + subtask progress
+│   │   │       ├── TaskModal.jsx             # Edit task + subtasks + due date
+│   │   │       └── AIBreakdownModal.jsx      # AI goal input + example prompts
 │   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   ├── vite.config.js                    # Proxy /api to localhost:5000
-│   ├── tailwind.config.js
+│   │   ├── main.jsx                          # Theme init before render
+│   │   └── index.css                         # Tailwind + dark mode scrollbar
+│   ├── vite.config.js                        # Proxy /api to localhost:5000
+│   ├── tailwind.config.js                    # darkMode: 'class'
 │   ├── postcss.config.js
 │   └── package.json
 │
-└── server/                               # Express backend
+└── server/                                   # Express backend
     ├── src/
     │   ├── controllers/
-    │   │   ├── auth.controller.js        # register, login, getMe, refresh, logout
-    │   │   ├── workspace.controller.js   # create, get, addMember, delete
-    │   │   ├── project.controller.js     # create, get, delete
-    │   │   ├── task.controller.js        # create, get, update, delete, toggleSubtask
-    │   │   ├── invite.controller.js      # sendInvite, acceptInvite, getInvites, cancel
-    │   │   └── ai.controller.js          # breakdownGoal with Mistral AI
+    │   │   ├── auth.controller.js            # register, login, getMe, refresh, logout
+    │   │   ├── workspace.controller.js       # create, get, addMember, delete
+    │   │   ├── project.controller.js         # create, get, delete
+    │   │   ├── task.controller.js            # create, get, update, delete, toggleSubtask
+    │   │   ├── invite.controller.js          # sendInvite, acceptInvite, getInvites, cancel
+    │   │   └── ai.controller.js              # breakdownGoal with Mistral AI
     │   ├── models/
-    │   │   ├── User.model.js             # name, email, password (hashed), avatar
-    │   │   ├── Workspace.model.js        # name, owner, members (with roles)
-    │   │   ├── Project.model.js          # name, description, color, workspace ref
-    │   │   ├── Task.model.js             # title, status, priority, assignee, subtasks, order
-    │   │   └── Invite.model.js           # email, token, workspace, role, status, expiresAt
+    │   │   ├── User.model.js                 # name, email, password (hashed), avatar
+    │   │   ├── Workspace.model.js            # name, owner, members (with roles)
+    │   │   ├── Project.model.js              # name, description, color, workspace ref
+    │   │   ├── Task.model.js                 # title, status, priority, assignee, subtasks, order
+    │   │   └── Invite.model.js               # email, token, workspace, role, status, expiresAt
     │   ├── routes/
-    │   │   ├── auth.routes.js
-    │   │   ├── workspace.routes.js
-    │   │   ├── project.routes.js         # GET + POST for workspace projects
-    │   │   ├── projectAction.routes.js   # DELETE /api/projects/:id
-    │   │   ├── task.routes.js            # GET + POST + PATCH + DELETE for tasks
-    │   │   ├── invite.routes.js
-    │   │   └── ai.routes.js
+    │   │   ├── auth.routes.js                # has rate limiter + validators
+    │   │   ├── workspace.routes.js           # has validators
+    │   │   ├── project.routes.js             # GET + POST for workspace projects
+    │   │   ├── projectAction.routes.js       # DELETE /api/projects/:id
+    │   │   ├── task.routes.js                # GET + POST + PATCH + DELETE + validators
+    │   │   ├── invite.routes.js              # has rate limiter + validators
+    │   │   └── ai.routes.js                  # has rate limiter
     │   ├── middleware/
-    │   │   └── auth.middleware.js        # JWT protect middleware → sets req.user
+    │   │   ├── auth.middleware.js            # JWT protect middleware → sets req.user
+    │   │   ├── validate.middleware.js        # express-validator error handler
+    │   │   └── rateLimiter.middleware.js     # authLimiter, apiLimiter, inviteLimiter, aiLimiter
+    │   ├── validators/
+    │   │   ├── auth.validator.js             # register + login rules
+    │   │   ├── workspace.validator.js        # create workspace + add member rules
+    │   │   ├── project.validator.js          # create project rules
+    │   │   ├── task.validator.js             # create + update task rules
+    │   │   └── invite.validator.js           # send invite rules
     │   ├── socket/
-    │   │   └── index.js                  # join-project, task-created, task-updated, task-deleted
+    │   │   └── index.js                      # join-project, task-created, task-updated, task-deleted
     │   ├── jobs/
-    │   │   └── taskReminder.job.js       # Cron job — runs daily at 8 AM
+    │   │   └── taskReminder.job.js           # Cron job — runs daily at 8 AM
     │   ├── utils/
-    │   │   ├── sendEmail.js              # Nodemailer invite email
-    │   │   └── sendReminderEmail.js      # Due soon + overdue reminder emails
-    │   └── index.js                      # App entry point
-    ├── .env                              # Never commit this!
+    │   │   ├── sendEmail.js                  # Nodemailer invite email
+    │   │   └── sendReminderEmail.js          # Due soon + overdue reminder emails
+    │   └── index.js                          # App entry point
+    ├── .env                                  # Never commit this!
     ├── .gitignore
     ├── Dockerfile
     └── package.json
@@ -232,13 +246,13 @@ Free tier model used: `mistral-small-latest`
 ## API Endpoints
 
 ### Auth
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | No | Register new user |
-| POST | `/api/auth/login` | No | Login, get tokens |
-| POST | `/api/auth/refresh` | No | Refresh access token |
-| GET | `/api/auth/me` | Yes | Get current user |
-| POST | `/api/auth/logout` | Yes | Logout |
+| Method | Endpoint | Auth | Rate Limited | Description |
+|---|---|---|---|---|
+| POST | `/api/auth/register` | No | Yes (10/15min) | Register new user |
+| POST | `/api/auth/login` | No | Yes (10/15min) | Login, get tokens |
+| POST | `/api/auth/refresh` | No | Yes (10/15min) | Refresh access token |
+| GET | `/api/auth/me` | Yes | No | Get current user |
+| POST | `/api/auth/logout` | Yes | No | Logout |
 
 ### Workspaces
 | Method | Endpoint | Auth | Description |
@@ -265,17 +279,28 @@ Free tier model used: `mistral-small-latest`
 | PATCH | `/api/projects/tasks/:id/subtasks` | Yes | Toggle subtask complete |
 
 ### Invites
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/invites/send` | Yes | Send email invite |
-| GET | `/api/invites/accept?token=xxx` | No | Accept invite via link |
-| GET | `/api/invites/workspace/:id` | Yes | List pending invites |
-| DELETE | `/api/invites/:id` | Yes | Cancel invite |
+| Method | Endpoint | Auth | Rate Limited | Description |
+|---|---|---|---|---|
+| POST | `/api/invites/send` | Yes | Yes (20/hour) | Send email invite |
+| GET | `/api/invites/accept?token=xxx` | No | No | Accept invite via link |
+| GET | `/api/invites/workspace/:id` | Yes | No | List pending invites |
+| DELETE | `/api/invites/:id` | Yes | No | Cancel invite |
 
 ### AI
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/ai/breakdown` | Yes | Break goal into tasks using Mistral AI |
+| Method | Endpoint | Auth | Rate Limited | Description |
+|---|---|---|---|---|
+| POST | `/api/ai/breakdown` | Yes | Yes (30/hour) | Break goal into tasks using Mistral AI |
+
+---
+
+## Rate Limits
+
+| Route | Limit | Window |
+|---|---|---|
+| `/api/auth/*` | 10 requests | 15 minutes |
+| `/api/invites/send` | 20 requests | 1 hour |
+| `/api/ai/breakdown` | 30 requests | 1 hour |
+| All `/api/*` | 200 requests | 15 minutes |
 
 ---
 
@@ -313,18 +338,36 @@ Free tier model used: `mistral-small-latest`
 - Copy User ID from sidebar
 - AI Task Breakdown — type a goal, Mistral AI creates tasks on the board
 - Automated email reminders — 1 day before due + overdue alerts at 8 AM daily
+- Dark mode toggle — persists across sessions, works on all pages
+- Input validation on all routes — returns clear field-level error messages
+- Rate limiting — protects auth, invite, and AI endpoints from abuse
 
 ### Todo
+- Fix error handler to hide stack traces in production
+- Cleanup expired invite tokens (cron job)
 - UI loading states (spinner while fetching)
 - Empty states with illustrations
 - Board header shows project name
-- User profile page with avatar
-- Task filters (by priority, assignee)
+- User profile page with avatar upload
+- Task filters (by priority, assignee, due date)
 - Notifications bell icon
+- Dashboard analytics (tasks completed chart, team workload)
 - Docker compose fully working
 - Deploy — Railway (backend) + Vercel (frontend)
 - TypeScript migration
-- Analytics dashboard
+- Unit tests with Jest
+- Redis caching
+
+---
+
+## Dark Mode
+
+Dark mode is implemented using Tailwind's `class` strategy:
+
+- Toggle the 🌙 / ☀️ button in the sidebar
+- Theme is saved to localStorage and persists after refresh
+- All pages, modals, and components support dark mode
+- Smooth transitions on all color changes
 
 ---
 
@@ -344,12 +387,30 @@ Change back to `'0 8 * * *'` after testing.
 
 ## How AI task breakdown works
 
-1. Click **AI Breakdown** button on any board
+1. Click **✨ AI Breakdown** button on any board
 2. Type your goal (e.g. "Build user authentication system")
 3. Click **Generate Tasks**
 4. Mistral AI breaks it into 5-8 tasks with titles, descriptions and priorities
 5. Tasks appear instantly in the Todo column
 6. Real-time sync sends them to all connected users via Socket.io
+
+---
+
+## How input validation works
+
+All routes have validator chains that run before the controller. If validation fails, the API returns:
+
+```json
+{
+  "message": "Validation failed",
+  "errors": [
+    { "field": "email", "message": "Please enter a valid email address" },
+    { "field": "password", "message": "Password must be at least 6 characters" }
+  ]
+}
+```
+
+Validated fields — name, email, password strength, MongoDB IDs, hex colors, ISO dates, enum values (priority, status, role).
 
 ---
 
@@ -365,6 +426,8 @@ Change back to `'0 8 * * *'` after testing.
 | Mistral 429 rate limit | Wait a moment and retry — free tier has per-minute limits |
 | JWT token expired | Auto handled by axios interceptor — logs out if refresh also fails |
 | `git divergent branches` | Run `git config pull.rebase false` then `git pull origin main` |
+| Dark mode not persisting | Check localStorage has `theme-storage` key |
+| Validators folder not found | Run `mkdir server/src/validators` then create each file |
 
 ---
 
@@ -407,3 +470,5 @@ git config pull.rebase false && git pull origin main
 - Gmail SMTP daily limit is 500 emails — fine for development and small teams
 - Socket.io rooms are per-project — only users viewing the same board get real-time updates
 - The AI feature sends tasks directly to the Todo column and emits socket events so all connected users see them instantly
+- Dark mode uses Tailwind `dark:` classes with `darkMode: 'class'` strategy — theme is stored in Zustand with localStorage persistence
+- Rate limiter uses IP-based tracking — in production behind a proxy, make sure to set `trust proxy` in Express
