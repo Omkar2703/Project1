@@ -1,6 +1,7 @@
 import { Mistral } from '@mistralai/mistralai'
 import Task from '../models/Task.model.js'
 import Project from '../models/Project.model.js'
+import AITrainingData from '../models/AITrainingData.model.js'
 
 export const breakdownGoal = async (req, res) => {
   const { goal, projectId } = req.body
@@ -107,6 +108,7 @@ Example:
     await created.populate('assignee', 'name email avatar')
     createdTasks.push(created)
   }
+  
 
   console.log(`✅ Mistral broke down "${goal}" into ${createdTasks.length} tasks`)
 
@@ -114,4 +116,14 @@ Example:
     message: `Created ${createdTasks.length} tasks from your goal!`,
     tasks: createdTasks
   })
+  await AITrainingData.create({
+    goal,
+    projectName: project.name,
+    tasks
+  })
+  if (!Array.isArray(tasks) || tasks.length === 0) return
+
+  const validTasks = tasks.filter(t => t.title && t.description)
+
+  if (validTasks.length === 0) return
 }
