@@ -10,16 +10,27 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 
+      staleTime: 1000 * 60
     }
   }
 })
+
+// ✅ Apply saved theme before render
+const savedTheme = JSON.parse(localStorage.getItem('theme-storage') || '{}')
+if (savedTheme?.state?.isDark) {
+  document.documentElement.classList.add('dark')
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: 'dark:bg-slate-800 dark:text-white'
+        }}
+      />
     </QueryClientProvider>
   </React.StrictMode>
 )

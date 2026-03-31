@@ -17,6 +17,8 @@ import taskRoutes from './routes/task.routes.js'
 import projectActionRoutes from './routes/projectAction.routes.js'  // ✅ add this
 import inviteRoutes from './routes/invite.routes.js'
 import aiRoutes from './routes/ai.routes.js'
+import { apiLimiter } from './middleware/rateLimiter.middleware.js'
+
 
 
 // Socket handler
@@ -55,6 +57,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString()
   })
 })
+app.use('/api', apiLimiter)    // ✅ covers all routes globally
 
 // ─── Routes ───────────────────────────────────────────────────
 app.use('/api/auth', authRoutes)

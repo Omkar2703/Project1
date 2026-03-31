@@ -10,20 +10,19 @@ import {
   useSensors
 } from '@dnd-kit/core'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import { getTasks, createTask, updateTask, deleteTask } from '../api/task.api'
 import { useProjectSocket } from '../hooks/useSocket'
 import KanbanColumn from '../components/board/KanbanColumn'
 import TaskCard from '../components/board/TaskCard'
 import TaskModal from '../components/board/TaskModal'
-import { Sparkles } from 'lucide-react'
 import AIBreakdownModal from '../components/board/AIBreakdownModal'
 
 const COLUMNS = [
-  { id: 'todo',        label: 'To Do',       color: '#94a3b8' },
-  { id: 'in-progress', label: 'In Progress',  color: '#f59e0b' },
-  { id: 'review',      label: 'Review',       color: '#8b5cf6' },
-  { id: 'done',        label: 'Done',         color: '#10b981' },
+  { id: 'todo',        label: 'To Do',      color: '#94a3b8' },
+  { id: 'in-progress', label: 'In Progress', color: '#f59e0b' },
+  { id: 'review',      label: 'Review',      color: '#8b5cf6' },
+  { id: 'done',        label: 'Done',        color: '#10b981' },
 ]
 
 export default function Board() {
@@ -31,16 +30,15 @@ export default function Board() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const [activeTask, setActiveTask] = useState(null)      // task being dragged
-  const [selectedTask, setSelectedTask] = useState(null)  // task modal open
-  const [showNewTask, setShowNewTask] = useState(null)    // which column shows input
+  const [activeTask, setActiveTask] = useState(null)
+  const [selectedTask, setSelectedTask] = useState(null)
+  const [showNewTask, setShowNewTask] = useState(null)
   const [showAI, setShowAI] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
-  // ─── Fetch Tasks ────────────────────────────────────────────
   const { data: grouped = {}, isLoading } = useQuery({
     queryKey: ['tasks', projectId],
     queryFn: async () => {
@@ -49,7 +47,6 @@ export default function Board() {
     }
   })
 
-  // ─── Socket: real-time sync ──────────────────────────────────
   useProjectSocket(projectId, {
     onTaskCreated: (task) => {
       queryClient.setQueryData(['tasks', projectId], (old = {}) => ({
@@ -59,12 +56,10 @@ export default function Board() {
     },
     onTaskUpdated: (task) => {
       queryClient.setQueryData(['tasks', projectId], (old = {}) => {
-        // Remove from all columns first
         const updated = {}
         COLUMNS.forEach(col => {
           updated[col.id] = (old[col.id] || []).filter(t => t._id !== task._id)
         })
-        // Add to correct column
         updated[task.status] = [...(updated[task.status] || []), task]
         return updated
       })
@@ -80,7 +75,6 @@ export default function Board() {
     }
   })
 
-  // ─── Mutations ────────────────────────────────────────────────
   const { mutate: addTask } = useMutation({
     mutationFn: ({ title, status }) => createTask(projectId, { title, status }),
     onSuccess: ({ data: task }) => {
@@ -115,9 +109,7 @@ export default function Board() {
     }
   })
 
-  // ─── Drag Handlers ────────────────────────────────────────────
   const handleDragStart = useCallback(({ active }) => {
-    // Find the task being dragged across all columns
     for (const col of COLUMNS) {
       const found = (grouped[col.id] || []).find(t => t._id === active.id)
       if (found) { setActiveTask(found); break }
@@ -128,10 +120,9 @@ export default function Board() {
     setActiveTask(null)
     if (!over) return
 
-    const newStatus = over.id   // over.id = column id
+    const newStatus = over.id
     const taskId = active.id
 
-    // Find current status
     let currentStatus = null
     for (const col of COLUMNS) {
       if ((grouped[col.id] || []).find(t => t._id === taskId)) {
@@ -142,7 +133,6 @@ export default function Board() {
 
     if (!currentStatus || currentStatus === newStatus) return
 
-    // Optimistic update
     queryClient.setQueryData(['tasks', projectId], (old = {}) => {
       const task = (old[currentStatus] || []).find(t => t._id === taskId)
       if (!task) return old
@@ -156,28 +146,28 @@ export default function Board() {
     moveTask({ taskId, status: newStatus })
   }, [grouped, projectId, queryClient, moveTask])
 
-  // ─── Render ───────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-950">
         <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 transition-colors">
+
       {/* Header */}
-      <div className="flex items-center gap-4 px-6 py-4 bg-white border-b border-slate-200">
+      <div className="flex items-center gap-4 px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
         <button
           onClick={() => navigate('/')}
-          className="p-2 rounded-lg hover:bg-slate-100 transition"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition"
         >
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-lg font-semibold text-slate-800 flex-1">Kanban Board</h1>
-
-        {/* ✅ AI Button */}
+        <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex-1">
+          Kanban Board
+        </h1>
         <button
           onClick={() => setShowAI(true)}
           className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
@@ -210,16 +200,12 @@ export default function Board() {
             ))}
           </div>
 
-          {/* Drag overlay — ghost card while dragging */}
           <DragOverlay>
-            {activeTask && (
-              <TaskCard task={activeTask} isDragging />
-            )}
+            {activeTask && <TaskCard task={activeTask} isDragging />}
           </DragOverlay>
         </DndContext>
       </div>
 
-      {/* Task Detail Modal */}
       {selectedTask && (
         <TaskModal
           task={selectedTask}
@@ -227,14 +213,14 @@ export default function Board() {
           onClose={() => setSelectedTask(null)}
         />
       )}
+
       {showAI && (
         <AIBreakdownModal
           projectId={projectId}
           onClose={() => setShowAI(false)}
           onTasksCreated={(tasks) => {
-            // Emit socket event so other users see new tasks too
             tasks.forEach(task => {
-              socket?.emit('task-created', { projectId, task })
+              // socket?.emit('task-created', { projectId, task })
             })
           }}
         />

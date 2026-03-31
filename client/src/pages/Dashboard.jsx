@@ -8,22 +8,21 @@ import { getProjects, createProject, deleteProject } from '../api/project.api'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import InviteMemberModal from '../components/InviteMemberModal'
 
-// ─── Confirm Dialog Component ─────────────────────────────────
 function ConfirmDialog({ message, onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
             <Trash2 size={22} className="text-red-500" />
           </div>
-          <h3 className="font-semibold text-slate-800 text-lg">Are you sure?</h3>
-          <p className="text-slate-500 text-sm mt-1">{message}</p>
+          <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-lg">Are you sure?</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{message}</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+            className="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
           >
             Cancel
           </button>
@@ -39,7 +38,6 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   )
 }
 
-// ─── Main Dashboard ───────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -50,12 +48,8 @@ export default function Dashboard() {
   const [workspaceName, setWorkspaceName] = useState('')
   const [projectName, setProjectName] = useState('')
   const [inviteWorkspace, setInviteWorkspace] = useState(null)
-
-  // Confirm dialog state
   const [confirm, setConfirm] = useState(null)
-  // confirm = { type: 'workspace'|'project', id, name }
 
-  // ─── Fetch workspaces ──────────────────────────────────────
   const { data: workspaces = [] } = useQuery({
     queryKey: ['workspaces'],
     queryFn: async () => {
@@ -65,7 +59,6 @@ export default function Dashboard() {
     }
   })
 
-  // ─── Fetch projects ────────────────────────────────────────
   const { data: projects = [] } = useQuery({
     queryKey: ['projects', activeWorkspace?._id],
     queryFn: async () => {
@@ -75,7 +68,6 @@ export default function Dashboard() {
     enabled: !!activeWorkspace
   })
 
-  // ─── Create workspace ──────────────────────────────────────
   const { mutate: addWorkspace } = useMutation({
     mutationFn: createWorkspace,
     onSuccess: ({ data }) => {
@@ -87,14 +79,12 @@ export default function Dashboard() {
     }
   })
 
-  // ─── Delete workspace ──────────────────────────────────────
   const { mutate: removeWorkspace } = useMutation({
     mutationFn: deleteWorkspace,
     onSuccess: (_, id) => {
       queryClient.setQueryData(['workspaces'], (old = []) =>
         old.filter(w => w._id !== id)
       )
-      // If deleted workspace was active, clear it
       if (activeWorkspace?._id === id) setActiveWorkspace(null)
       toast.success('Workspace deleted!')
       setConfirm(null)
@@ -105,7 +95,6 @@ export default function Dashboard() {
     }
   })
 
-  // ─── Create project ────────────────────────────────────────
   const { mutate: addProject } = useMutation({
     mutationFn: (data) => createProject(activeWorkspace._id, data),
     onSuccess: () => {
@@ -116,7 +105,6 @@ export default function Dashboard() {
     }
   })
 
-  // ─── Delete project ────────────────────────────────────────
   const { mutate: removeProject } = useMutation({
     mutationFn: deleteProject,
     onSuccess: (_, id) => {
@@ -132,32 +120,30 @@ export default function Dashboard() {
     }
   })
 
-  // ─── Handle confirm dialog ─────────────────────────────────
   const handleConfirmDelete = () => {
     if (confirm.type === 'workspace') removeWorkspace(confirm.id)
     if (confirm.type === 'project') removeProject(confirm.id)
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
+    <div className="p-8 bg-slate-50 dark:bg-slate-950 min-h-full transition-colors">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-slate-500 mt-1">Manage your workspaces and projects</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Dashboard</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your workspaces and projects</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-        {/* ─── Workspaces Panel ───────────────────────────── */}
+        {/* Workspaces Panel */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-slate-700">Workspaces</h2>
+              <h2 className="font-semibold text-slate-700 dark:text-slate-200">Workspaces</h2>
               <button
                 onClick={() => setShowNewWorkspace(true)}
-                className="p-1 rounded hover:bg-slate-100"
+                className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
               >
                 <Plus size={16} />
               </button>
@@ -174,7 +160,7 @@ export default function Dashboard() {
                       addWorkspace({ name: workspaceName.trim() })
                     if (e.key === 'Escape') setShowNewWorkspace(false)
                   }}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                   placeholder="Workspace name..."
                 />
               </div>
@@ -186,11 +172,10 @@ export default function Dashboard() {
                   key={ws._id}
                   className={`group flex items-center justify-between px-3 py-2 rounded-lg text-sm transition ${
                     activeWorkspace?._id === ws._id
-                      ? 'bg-primary-50 text-primary-700 font-medium'
-                      : 'hover:bg-slate-50 text-slate-600'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  {/* Workspace name */}
                   <button
                     onClick={() => setActiveWorkspace(ws)}
                     className="flex items-center gap-2 flex-1 text-left"
@@ -201,19 +186,17 @@ export default function Dashboard() {
                     />
                     <span className="truncate">{ws.name}</span>
                   </button>
-
-                  {/* Action buttons — show on hover */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                     <button
                       onClick={() => setInviteWorkspace(ws)}
-                      className="p-1 rounded hover:bg-primary-100 text-slate-400 hover:text-primary-600 transition"
+                      className="p-1 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 text-slate-400 hover:text-primary-600 transition"
                       title="Invite member"
                     >
                       <UserPlus size={13} />
                     </button>
                     <button
                       onClick={() => setConfirm({ type: 'workspace', id: ws._id, name: ws.name })}
-                      className="p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition"
+                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500 transition"
                       title="Delete workspace"
                     >
                       <Trash2 size={13} />
@@ -231,11 +214,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ─── Projects Panel ─────────────────────────────── */}
+        {/* Projects Panel */}
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-slate-700">
+              <h2 className="font-semibold text-slate-700 dark:text-slate-200">
                 {activeWorkspace ? `${activeWorkspace.name} — Projects` : 'Projects'}
               </h2>
               {activeWorkspace && (
@@ -249,7 +232,7 @@ export default function Dashboard() {
             </div>
 
             {showNewProject && (
-              <div className="mb-4 p-4 bg-slate-50 rounded-lg">
+              <div className="mb-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <input
                   autoFocus
                   value={projectName}
@@ -259,7 +242,7 @@ export default function Dashboard() {
                       addProject({ name: projectName.trim() })
                     if (e.key === 'Escape') setShowNewProject(false)
                   }}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100"
                   placeholder="Project name... (press Enter to create)"
                 />
               </div>
@@ -269,18 +252,16 @@ export default function Dashboard() {
               {projects.map(project => (
                 <div
                   key={project._id}
-                  className="group p-4 border border-slate-200 rounded-xl hover:border-primary-300 hover:shadow-md transition relative"
+                  className="group p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary-300 dark:hover:border-primary-500 hover:shadow-md transition relative bg-white dark:bg-slate-800"
                 >
-                  {/* Delete button */}
                   <button
                     onClick={() => setConfirm({ type: 'project', id: project._id, name: project.name })}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 text-slate-300 hover:text-red-500 transition"
+                    className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-300 hover:text-red-500 transition"
                     title="Delete project"
                   >
                     <Trash2 size={14} />
                   </button>
 
-                  {/* Project card — navigate on click */}
                   <div
                     onClick={() => navigate(`/board/${project._id}`)}
                     className="cursor-pointer"
@@ -297,7 +278,7 @@ export default function Dashboard() {
                         className="text-slate-300 group-hover:text-primary-500 transition mt-1 mr-6"
                       />
                     </div>
-                    <h3 className="font-medium text-slate-800">{project.name}</h3>
+                    <h3 className="font-medium text-slate-800 dark:text-slate-100">{project.name}</h3>
                     {project.description && (
                       <p className="text-xs text-slate-400 mt-1 line-clamp-2">
                         {project.description}
@@ -324,7 +305,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ─── Invite Modal ──────────────────────────────────── */}
       {inviteWorkspace && (
         <InviteMemberModal
           workspace={inviteWorkspace}
@@ -332,7 +312,6 @@ export default function Dashboard() {
         />
       )}
 
-      {/* ─── Confirm Delete Dialog ─────────────────────────── */}
       {confirm && (
         <ConfirmDialog
           message={
