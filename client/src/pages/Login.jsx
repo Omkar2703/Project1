@@ -50,7 +50,7 @@ export default function Login() {
             required
             value={form.email}
             onChange={e => setForm({ ...form, email: e.target.value })}
-            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2.5 border border-slate-200 text-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             placeholder="Enter your registered email id"
           />
         </div>
@@ -61,7 +61,7 @@ export default function Login() {
             required
             value={form.password}
             onChange={e => setForm({ ...form, password: e.target.value })}
-            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2.5 border border-slate-200 text-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             placeholder="••••••••"
           />
         </div>
